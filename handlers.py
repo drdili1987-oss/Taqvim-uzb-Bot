@@ -93,23 +93,24 @@ async def channel_post_setcity(message: Message) -> None:
 async def cmd_bugun(message: Message) -> None:
     await _send_today_schedule(message)
 
-
 @router.channel_post(Command("bugun"))
 async def channel_post_bugun(message: Message) -> None:
     await _send_today_schedule(message)
 
-
 async def _send_today_schedule(message: Message) -> None:
     chat = message.chat
-    region: Optional[str] = None
-
+    
+    # Qaysi shahar bo'yicha qidiramiz?
+    region = None
     if chat.type == ChatType.PRIVATE:
-        user_data = await database.get_user(chat.id)
-        region = user_data.get("region") if user_data else None
+        user_info = await database.get_user(chat.id)
+        if user_info:
+            region = user_info.get("region")
     else:
-        chat_data = await database.get_chat(chat.id)
-        region = chat_data.get("region") if chat_data else None
-
+        chat_info = await database.get_chat(chat.id)
+        if chat_info:
+            region = chat_info.get("region")
+            
     if not region:
         scope = "user" if chat.type == ChatType.PRIVATE else "chat"
         await message.answer(
@@ -117,15 +118,19 @@ async def _send_today_schedule(message: Message) -> None:
             reply_markup=build_city_keyboard(scope),
         )
         return
-
+        
     times = await prayers.get_today_times(region)
     if not times:
-        await message.answer(
-            "⚠️ Namoz vaqtlarini olishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
-        )
+        await message.answer("⚠️ Namoz vaqtlarini olishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.")
         return
-
-    await message.answer(prayers.format_full_schedule(region, times))
+        
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    share_url = f"https://t.me/share/url?url=https://t.me/{config.BOT_USERNAME}&text=Yaqinlaringizga%20ham%20namoz%20vaqtlarini%20ulashing!"
+    share_kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="♻️ Do'stlarga ulashish", url=share_url)
+    ]])
+        
+    await message.answer(prayers.format_full_schedule(region, times), reply_markup=share_kb)
 
 
 # ============================================================================
@@ -181,7 +186,12 @@ async def callback_city_selected(callback: CallbackQuery) -> None:
     # Shahar tanlangach, darhol bugungi to'liq jadvalni yuborish
     times = await prayers.get_today_times(city_name)
     if times:
-        await callback.message.answer(prayers.format_full_schedule(city_name, times))
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        share_url = f"https://t.me/share/url?url=https://t.me/{config.BOT_USERNAME}&text=Yaqinlaringizga%20ham%20namoz%20vaqtlarini%20ulashing!"
+        share_kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="♻️ Do'stlarga ulashish", url=share_url)
+        ]])
+        await callback.message.answer(prayers.format_full_schedule(city_name, times), reply_markup=share_kb)
 
     await callback.answer("Saqlandi ✅")
 

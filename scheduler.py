@@ -26,7 +26,7 @@ TASHKENT_TZ = ZoneInfo(config.TIMEZONE)
 _send_semaphore = asyncio.Semaphore(config.SEND_CONCURRENCY_LIMIT)
 
 
-async def _safe_send(bot: Bot, chat_id: int, text: str, *, is_chat_entity: bool) -> None:
+async def _safe_send(bot: Bot, chat_id: int, text: str, *, is_chat_entity: bool, reply_markup=None) -> None:
     """
     Xabarni xavfsiz yuboradi. Agar bot bloklangan yoki chatdan chiqarilgan
     bo'lsa — tegishli Firebase yozuvi avtomatik o'chiriladi (self-healing),
@@ -35,11 +35,11 @@ async def _safe_send(bot: Bot, chat_id: int, text: str, *, is_chat_entity: bool)
     """
     async with _send_semaphore:
         try:
-            await bot.send_message(chat_id, text)
+            await bot.send_message(chat_id, text, reply_markup=reply_markup)
         except TelegramRetryAfter as exc:
             await asyncio.sleep(exc.retry_after + 1)
             try:
-                await bot.send_message(chat_id, text)
+                await bot.send_message(chat_id, text, reply_markup=reply_markup)
             except Exception as retry_exc:
                 logger.error("Qayta urinishda ham xabar yuborilmadi chat_id=%s: %s", chat_id, retry_exc)
         except (TelegramForbiddenError, TelegramBadRequest) as exc:
@@ -112,18 +112,25 @@ async def _check_and_notify(bot: Bot) -> None:
         user_ids = users_by_region.get(region, [])
         chat_ids = chats_by_region.get(region, [])
 
+        # Ulashish tugmasini yaratish
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        share_url = f"https://t.me/share/url?url=https://t.me/{config.BOT_USERNAME}&text=Yaqinlaringizga%20ham%20namoz%20vaqtlarini%20ulashing!"
+        share_kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="♻️ Do'stlarga ulashish", url=share_url)
+        ]])
+        
         if matched_prayer == "bomdod":
             # Ertalab Bomdod vaqtida hammaga (shaxsiy va guruhlarga) to'liq jadval
             full_text = prayers.format_full_schedule(region, times, bomdod_notice=True)
-            tasks = [_safe_send(bot, uid, full_text, is_chat_entity=False) for uid in user_ids]
-            tasks += [_safe_send(bot, cid, full_text, is_chat_entity=True) for cid in chat_ids]
+            tasks = [_safe_send(bot, uid, full_text, is_chat_entity=False, reply_markup=share_kb) for uid in user_ids]
+            tasks += [_safe_send(bot, cid, full_text, is_chat_entity=True, reply_markup=share_kb) for cid in chat_ids]
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
         else:
             # Qolgan namoz vaqtlarida faqat aynan o'sha namozning qisqa eslatmasi
             reminder_text = prayers.format_reminder(region, matched_prayer, current_hm)
-            tasks = [_safe_send(bot, uid, reminder_text, is_chat_entity=False) for uid in user_ids]
-            tasks += [_safe_send(bot, cid, reminder_text, is_chat_entity=True) for cid in chat_ids]
+            tasks = [_safe_send(bot, uid, reminder_text, is_chat_entity=False, reply_markup=share_kb) for uid in user_ids]
+            tasks += [_safe_send(bot, cid, reminder_text, is_chat_entity=True, reply_markup=share_kb) for cid in chat_ids]
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
 

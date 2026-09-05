@@ -19,6 +19,8 @@ if not BOT_TOKEN:
         "BOT_TOKEN environment o'zgaruvchisi topilmadi. "
         "Uni Render dashboard > Environment bo'limida o'rnating."
     )
+    
+BOT_USERNAME = "taqvim_uzb_bot"
 
 # --------------------------------------------------------------------------
 # Admin foydalanuvchilar (Telegram user_id lar vergul bilan ajratilgan)
