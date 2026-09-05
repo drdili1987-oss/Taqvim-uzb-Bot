@@ -217,3 +217,60 @@ async def on_bot_membership_changed(event: ChatMemberUpdated) -> None:
     elif new_status in left_statuses:
         await database.remove_chat(chat.id)
         logger.info("Bot chat_id=%s dan chiqarildi, yozuv Firebase'dan o'chirildi.", chat.id)
+
+
+# ============================================================================
+# Admin buyruqlari: /stats va /broadcast
+# ============================================================================
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message) -> None:
+    if message.from_user.id not in config.ADMIN_IDS:
+        return
+    
+    users = await database.get_all_users()
+    chats = await database.get_all_chats()
+    
+    user_count = len(users) if users else 0
+    chat_count = len(chats) if chats else 0
+    
+    text = (
+        f"📊 <b>Bot statistikasi:</b>\n\n"
+        f"👤 Shaxsiy foydalanuvchilar: <b>{user_count}</b> ta\n"
+        f"👥 Guruh va kanallar: <b>{chat_count}</b> ta\n"
+        f"jami obunachilar: <b>{user_count + chat_count}</b> ta"
+    )
+    await message.answer(text)
+
+import asyncio
+
+@router.message(Command("broadcast"))
+async def cmd_broadcast(message: Message, bot: Bot) -> None:
+    if message.from_user.id not in config.ADMIN_IDS:
+        return
+        
+    text = message.text.replace("/broadcast", "", 1).strip()
+    if not text:
+        await message.answer("⚠️ Xabar matnini kiriting. Masalan: <code>/broadcast Hammaga salom!</code>")
+        return
+        
+    m = await message.answer("⏳ Xabarni tarqatish boshlandi. Bu biroz vaqt olishi mumkin...")
+    
+    users = await database.get_all_users()
+    chats = await database.get_all_chats()
+    
+    all_ids = list(users.keys()) if users else []
+    all_ids += list(chats.keys()) if chats else []
+    
+    success = 0
+    fail = 0
+    
+    for chat_id in all_ids:
+        try:
+            await bot.send_message(chat_id, text)
+            success += 1
+        except Exception:
+            fail += 1
+        await asyncio.sleep(0.05)  # Telegram API flood-limit'ga tushmaslik uchun
+        
+    await m.edit_text(f"✅ <b>Tarqatish tugadi.</b>\n\nMuvaffaqiyatli: {success} ta\nXatolar: {fail} ta")
