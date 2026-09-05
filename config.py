@@ -91,13 +91,23 @@ API_REQUEST_TIMEOUT = 15  # soniya
 # --------------------------------------------------------------------------
 CITIES: dict = {
     "toshkent": "Toshkent",
+    "zangiota": "Zangiota",
+    "chinoz": "Chinoz",
+    "bekobod": "Bekobod",
+    "angren": "Angren",
+    "chirchiq": "Chirchiq",
     "samarqand": "Samarqand",
+    "urgut": "Urgut",
     "buxoro": "Buxoro",
     "andijon": "Andijon",
     "namangan": "Namangan",
     "fargona": "Farg'ona",
+    "qoqon": "Qo'qon",
+    "margilon": "Marg'ilon",
     "qarshi": "Qarshi",
+    "shahrisabz": "Shahrisabz",
     "termiz": "Termiz",
+    "denov": "Denov",
     "navoiy": "Navoiy",
     "urganch": "Urganch",
     "nukus": "Nukus",
@@ -106,15 +116,21 @@ CITIES: dict = {
     "xiva": "Xiva",
 }
 
+# Saytda yo'q tumanlar qaysi kattaroq markazga bog'lanishini ko'rsatamiz
+_SLUG_MAP = {
+    "zangiota": "toshkent",
+    "chinoz": "toshkent",
+    "chirchiq": "toshkent"
+}
 
 def city_name_by_slug(slug: str) -> Optional[str]:
     return CITIES.get(slug)
 
-
 def slug_by_city_name(name: str) -> Optional[str]:
     for slug, city in CITIES.items():
         if city == name:
-            return slug
+            # Haqiqiy sayt slug'ini qaytaramiz (masalan zangiota -> toshkent)
+            return _SLUG_MAP.get(slug, slug)
     return None
 
 
