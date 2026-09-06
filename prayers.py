@@ -135,17 +135,6 @@ async def _fetch_from_api(region: str) -> dict:
         if match:
             parsed[k] = match.group(1)
             
-    # islom.uz bilan to'liq bir xil bo'lishi uchun ofsetlar (daqiqada)
-    # Hozirgi farq: Shomda +4 daqiqa, Xuftonda +2 daqiqa.
-    offsets = {
-        "shom": 4,
-        "xufton": 2
-    }
-    
-    for k, offset_mins in offsets.items():
-        if k in parsed:
-            parsed[k] = _adjust_time(parsed[k], offset_mins)
-            
     # Tong va bomdod bir xil vaqtni bildiradi
     if "bomdod" in parsed:
         parsed["tong"] = parsed["bomdod"]
