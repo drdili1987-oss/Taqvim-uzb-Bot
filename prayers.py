@@ -247,4 +247,8 @@ def format_full_schedule(region: str, times: dict, *, bomdod_notice: bool = Fals
 def format_reminder(region: str, prayer_key: str, time_str: str) -> str:
     """Shaxsiy chatga kun davomidagi bitta namoz vaqti uchun qisqa eslatma (HTML)."""
     display = config.PRAYER_DISPLAY_NAMES.get(prayer_key, prayer_key.title())
-    return f"🔔 <b>{display}</b> namozi vaqti kirdi — {time_str}\n📍 {region}"
+    
+    if prayer_key == "quyosh":
+        return f"🌅 Quyosh chiqdi — <b>{time_str}</b>\n⚠️ <i>Bomdod namozi vaqti chiqdi!</i>\n📍 {region}"
+        
+    return f"🔔 <b>{display}</b> namozi vaqti kirdi — <b>{time_str}</b>\n📍 {region}"
