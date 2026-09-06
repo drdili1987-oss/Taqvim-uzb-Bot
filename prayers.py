@@ -135,8 +135,12 @@ async def _fetch_from_api(region: str) -> dict:
         if match:
             parsed[k] = match.group(1)
             
-    # Maxsus so'rov: Shomga +4, Xuftonga +2 daqiqa har doim qo'shiladi (namozvaqti.uz qancha o'zgarsa ham)
+    # Maxsus so'rov: Barcha namoz vaqtlari uchun har doim qo'shiladigan/ayiriladigan daqiqalar (namozvaqti.uz qancha o'zgarsa ham)
     offsets = {
+        "bomdod": -1,
+        "quyosh": -1,
+        "peshin": -5,
+        "asr": 1,
         "shom": 4,
         "xufton": 2
     }
@@ -145,7 +149,7 @@ async def _fetch_from_api(region: str) -> dict:
         if k in parsed:
             parsed[k] = _adjust_time(parsed[k], offset_mins)
             
-    # Tong va bomdod bir xil vaqtni bildiradi
+    # Tong va bomdod bir xil vaqtni bildiradi. (Bomdod -1 qilingani uchun Tong ham avtomat -1 bo'ladi)
     if "bomdod" in parsed:
         parsed["tong"] = parsed["bomdod"]
 
